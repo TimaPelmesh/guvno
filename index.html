@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VM Lifecycle Management - Автоматизация ВМ</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Форма авторизации -->
+    <div id="loginModal" class="modal active">
+        <div class="modal-content">
+            <div class="login-container">
+                <div class="login-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h2>Авторизация</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Логин</label>
+                        <input type="text" id="username" name="username" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Пароль</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="password" name="password" required>
+                            <button type="button" class="password-toggle" id="passwordToggle" aria-label="Показать пароль">
+                                <svg class="eye-icon eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg class="eye-icon eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group remember-me">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="rememberMe" name="rememberMe">
+                            <span class="checkbox-custom"></span>
+                            <span class="checkbox-text">Запомнить меня</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-primary">Войти</button>
+                    <div id="loginError" class="error-message"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основное приложение -->
+    <div id="app" class="app hidden">
+        <!-- Навигация -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                    <span>VM Manager</span>
+                </div>
+                <button class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="#" data-page="dashboard" class="nav-link active">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Дашборд</span>
+                    </a></li>
+                    <li><a href="#" data-page="catalog" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                        </svg>
+                        <span>Каталог услуг</span>
+                    </a></li>
+                    <li><a href="#" data-page="requests" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span>Мои заявки</span>
+                    </a></li>
+                    <li><a href="#" data-page="vms" class="nav-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        <span>Виртуальные машины</span>
+                    </a></li>
+                    <li><a href="#" class="nav-link logout" id="logoutBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span>Выход</span>
+                    </a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Контент -->
+        <main class="main-content">
+            <!-- Страница: Дашборд -->
+            <div id="dashboard" class="page active">
+                <div class="page-header">
+                    <h1>Дашборд</h1>
+                    <p class="subtitle">Обзор системы управления виртуальными машинами</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>24</h3>
+                            <p>Активных ВМ</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>8</h3>
+                            <p>Заявок в работе</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>5</h3>
+                            <p>Истекает через 7 дней</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>92%</h3>
+                            <p>Доступность</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Последние заявки</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="request-item">
+                                <div class="request-icon status-pending">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="request-info">
+                                    <h4>Создание ВМ для разработки</h4>
+                                    <p>Заявка #1234 • 2 часа назад</p>
+                                </div>
+                                <span class="status-badge pending">В обработке</span>
+                            </div>
+                            <div class="request-item">
+                                <div class="request-icon status-approved">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="request-info">
+                                    <h4>Увеличение ресурсов ВМ</h4>
+                                    <p>Заявка #1233 • 5 часов назад</p>
+                                </div>
+                                <span class="status-badge approved">Одобрено</span>
+                            </div>
+                            <div class="request-item">
+                                <div class="request-icon status-completed">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="request-info">
+                                    <h4>Списание ВМ test-server-01</h4>
+                                    <p>Заявка #1232 • Вчера</p>
+                                </div>
+                                <span class="status-badge completed">Завершено</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Активные виртуальные машины</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="vm-item">
+                                <div class="vm-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    </svg>
+                                </div>
+                                <div class="vm-info">
+                                    <h4>dev-server-01</h4>
+                                    <p>4 vCPU • 8 GB RAM • Ubuntu 22.04</p>
+                                    <p class="vm-expiry">Истекает через 12 дней</p>
+                                </div>
+                                <div class="vm-status running"></div>
+                            </div>
+                            <div class="vm-item">
+                                <div class="vm-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    </svg>
+                                </div>
+                                <div class="vm-info">
+                                    <h4>test-db-02</h4>
+                                    <p>8 vCPU • 16 GB RAM • CentOS 8</p>
+                                    <p class="vm-expiry warning">Истекает через 3 дня</p>
+                                </div>
+                                <div class="vm-status running"></div>
+                            </div>
+                            <div class="vm-item">
+                                <div class="vm-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    </svg>
+                                </div>
+                                <div class="vm-info">
+                                    <h4>prod-api-01</h4>
+                                    <p>16 vCPU • 32 GB RAM • RHEL 9</p>
+                                    <p class="vm-expiry">Истекает через 45 дней</p>
+                                </div>
+                                <div class="vm-status running"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Страница: Каталог услуг -->
+            <div id="catalog" class="page">
+                <div class="page-header">
+                    <h1>Каталог услуг</h1>
+                    <p class="subtitle">Выберите услугу для создания заявки</p>
+                </div>
+
+                <div class="catalog-grid">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                        </div>
+                        <h3>Создание ВМ</h3>
+                        <p>Создание новой виртуальной машины с настраиваемыми параметрами</p>
+                        <ul class="service-features">
+                            <li>Выбор ОС</li>
+                            <li>Настройка ресурсов</li>
+                            <li>Автоматическое развертывание</li>
+                        </ul>
+                        <button class="btn-primary" data-service="create-vm">Создать заявку</button>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                            </svg>
+                        </div>
+                        <h3>Изменение ресурсов</h3>
+                        <p>Увеличение или уменьшение ресурсов существующей ВМ</p>
+                        <ul class="service-features">
+                            <li>Изменение vCPU</li>
+                            <li>Изменение RAM</li>
+                            <li>Изменение диска</li>
+                        </ul>
+                        <button class="btn-primary" data-service="modify-vm">Создать заявку</button>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <h3>Продление аренды</h3>
+                        <p>Продление срока аренды виртуальной машины</p>
+                        <ul class="service-features">
+                            <li>Выбор периода</li>
+                            <li>Автоматическое уведомление</li>
+                            <li>Быстрое согласование</li>
+                        </ul>
+                        <button class="btn-primary" data-service="extend-vm">Создать заявку</button>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </div>
+                        <h3>Списание ВМ</h3>
+                        <p>Удаление виртуальной машины и освобождение ресурсов</p>
+                        <ul class="service-features">
+                            <li>Резервное копирование</li>
+                            <li>Безопасное удаление</li>
+                            <li>Освобождение ресурсов</li>
+                        </ul>
+                        <button class="btn-primary btn-danger" data-service="delete-vm">Создать заявку</button>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                        </div>
+                        <h3>Снимок состояния</h3>
+                        <p>Создание снимка текущего состояния ВМ</p>
+                        <ul class="service-features">
+                            <li>Моментальный снимок</li>
+                            <li>Восстановление</li>
+                            <li>Управление снимками</li>
+                        </ul>
+                        <button class="btn-primary" data-service="snapshot-vm">Создать заявку</button>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                        </div>
+                        <h3>Клонирование ВМ</h3>
+                        <p>Создание копии существующей виртуальной машины</p>
+                        <ul class="service-features">
+                            <li>Полное копирование</li>
+                            <li>Настройка параметров</li>
+                            <li>Быстрое развертывание</li>
+                        </ul>
+                        <button class="btn-primary" data-service="clone-vm">Создать заявку</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Страница: Мои заявки -->
+            <div id="requests" class="page">
+                <div class="page-header">
+                    <h1>Мои заявки</h1>
+                    <p class="subtitle">История и статус ваших заявок</p>
+                </div>
+
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">Все</button>
+                    <button class="filter-btn" data-filter="pending">В обработке</button>
+                    <button class="filter-btn" data-filter="approved">Одобрено</button>
+                    <button class="filter-btn" data-filter="completed">Завершено</button>
+                    <button class="filter-btn" data-filter="rejected">Отклонено</button>
+                </div>
+
+                <div class="requests-list">
+                    <div class="request-card" data-status="pending">
+                        <div class="request-card-header">
+                            <div class="request-title">
+                                <h3>Создание ВМ для разработки</h3>
+                                <span class="request-id">#1234</span>
+                            </div>
+                            <span class="status-badge pending">В обработке</span>
+                        </div>
+                        <div class="request-card-body">
+                            <div class="request-detail">
+                                <span class="detail-label">Тип услуги:</span>
+                                <span>Создание ВМ</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">Параметры:</span>
+                                <span>Ubuntu 22.04, 4 vCPU, 8 GB RAM, 100 GB диск</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">Создано:</span>
+                                <span>2 часа назад</span>
+                            </div>
+                        </div>
+                        <div class="request-card-footer">
+                            <button class="btn-secondary">Подробнее</button>
+                            <button class="btn-secondary btn-danger">Отменить</button>
+                        </div>
+                    </div>
+
+                    <div class="request-card" data-status="approved">
+                        <div class="request-card-header">
+                            <div class="request-title">
+                                <h3>Увеличение ресурсов ВМ</h3>
+                                <span class="request-id">#1233</span>
+                            </div>
+                            <span class="status-badge approved">Одобрено</span>
+                        </div>
+                        <div class="request-card-body">
+                            <div class="request-detail">
+                                <span class="detail-label">Тип услуги:</span>
+                                <span>Изменение ресурсов</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">ВМ:</span>
+                                <span>dev-server-01</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">Изменения:</span>
+                                <span>RAM: 8 GB → 16 GB</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">Одобрено:</span>
+                                <span>5 часов назад</span>
+                            </div>
+                        </div>
+                        <div class="request-card-footer">
+                            <button class="btn-secondary">Подробнее</button>
+                        </div>
+                    </div>
+
+                    <div class="request-card" data-status="completed">
+                        <div class="request-card-header">
+                            <div class="request-title">
+                                <h3>Списание ВМ test-server-01</h3>
+                                <span class="request-id">#1232</span>
+                            </div>
+                            <span class="status-badge completed">Завершено</span>
+                        </div>
+                        <div class="request-card-body">
+                            <div class="request-detail">
+                                <span class="detail-label">Тип услуги:</span>
+                                <span>Списание ВМ</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">ВМ:</span>
+                                <span>test-server-01</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">Завершено:</span>
+                                <span>Вчера, 14:30</span>
+                            </div>
+                        </div>
+                        <div class="request-card-footer">
+                            <button class="btn-secondary">Подробнее</button>
+                        </div>
+                    </div>
+
+                    <div class="request-card" data-status="pending">
+                        <div class="request-card-header">
+                            <div class="request-title">
+                                <h3>Продление аренды ВМ</h3>
+                                <span class="request-id">#1231</span>
+                            </div>
+                            <span class="status-badge pending">В обработке</span>
+                        </div>
+                        <div class="request-card-body">
+                            <div class="request-detail">
+                                <span class="detail-label">Тип услуги:</span>
+                                <span>Продление аренды</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">ВМ:</span>
+                                <span>prod-api-01</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">Период:</span>
+                                <span>30 дней</span>
+                            </div>
+                            <div class="request-detail">
+                                <span class="detail-label">Создано:</span>
+                                <span>1 день назад</span>
+                            </div>
+                        </div>
+                        <div class="request-card-footer">
+                            <button class="btn-secondary">Подробнее</button>
+                            <button class="btn-secondary btn-danger">Отменить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Страница: Виртуальные машины -->
+            <div id="vms" class="page">
+                <div class="page-header">
+                    <h1>Виртуальные машины</h1>
+                    <p class="subtitle">Управление вашими виртуальными машинами</p>
+                </div>
+
+                <div class="vms-grid">
+                    <div class="vm-card">
+                        <div class="vm-card-header">
+                            <div class="vm-name">
+                                <div class="vm-status-indicator running"></div>
+                                <h3>dev-server-01</h3>
+                            </div>
+                            <div class="vm-actions">
+                                <button class="icon-btn" title="Настройки">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="vm-card-body">
+                            <div class="vm-specs">
+                                <div class="spec-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    </svg>
+                                    <span>4 vCPU</span>
+                                </div>
+                                <div class="spec-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="1" y="4" width="22" height="16" rx="2"></rect>
+                                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                                    </svg>
+                                    <span>8 GB RAM</span>
+                                </div>
+                                <div class="spec-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    </svg>
+                                    <span>100 GB</span>
+                                </div>
+                            </div>
+                            <div class="vm-info">
+                                <p><strong>ОС:</strong> Ubuntu 22.04 LTS</p>
+                                <p><strong>IP:</strong> 192.168.1.100</p>
+                                <p><strong>Создана:</strong> 15.01.2024</p>
+                                <p class="vm-expiry"><strong>Истекает:</strong> 15.02.2024 (через 12 дней)</p>
+                            </div>
+                        </div>
+                        <div class="vm-card-footer">
+                            <button class="btn-secondary">Подробнее</button>
+                            <button class="btn-secondary">Продлить</button>
+                        </div>
+                    </div>
+
+                    <div class="vm-card">
+                        <div class="vm-card-header">
+                            <div class="vm-name">
+                                <div class="vm-status-indicator running"></div>
+                                <h3>test-db-02</h3>
+                            </div>
+                            <div class="vm-actions">
+                                <button class="icon-btn" title="Настройки">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="vm-card-body">
+                            <div class="vm-specs">
+                                <div class="spec-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    </svg>
+                                    <span>8 vCPU</span>
+                                </div>
+                                <div class="spec-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="1" y="4" width="22" height="16" rx="2"></rect>
+                                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                                    </svg>
+                                    <span>16 GB RAM</span>
+                                </div>
+                                <div class="spec-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    </svg>
+                                    <span>200 GB</span>
+                                </div>
+                            </div>
+                            <div class="vm-info">
+                                <p><strong>ОС:</strong> CentOS 8</p>
+                                <p><strong>IP:</strong> 192.168.1.101</p>
+                                <p><strong>Создана:</strong> 10.01.2024</p>
+                                <p class="vm-expiry warning"><strong>Истекает:</strong> 20.01.2024 (через 3 дня)</p>
+                            </div>
+                        </div>
+                        <div class="vm-card-footer">
+                            <button class="btn-secondary">Подробнее</button>
+                            <button class="btn-secondary">Продлить</button>
+                        </div>
+                    </div>
+
+                    <div class="vm-card">
+                        <div class="vm-card-header">
+                            <div class="vm-name">
+                                <div class="vm-status-indicator running"></div>
+                                <h3>prod-api-01</h3>
+                            </div>
+                            <div class="vm-actions">
+                                <button class="icon-btn" title="Настройки">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="vm-card-body">
+                            <div class="vm-specs">
+                                <div class="spec-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    </svg>
+                                    <span>16 vCPU</span>
+                                </div>
+                                <div class="spec-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="1" y="4" width="22" height="16" rx="2"></rect>
+                                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                                    </svg>
+                                    <span>32 GB RAM</span>
+                                </div>
+                                <div class="spec-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    </svg>
+                                    <span>500 GB</span>
+                                </div>
+                            </div>
+                            <div class="vm-info">
+                                <p><strong>ОС:</strong> RHEL 9</p>
+                                <p><strong>IP:</strong> 192.168.1.102</p>
+                                <p><strong>Создана:</strong> 01.12.2023</p>
+                                <p class="vm-expiry"><strong>Истекает:</strong> 01.03.2024 (через 45 дней)</p>
+                            </div>
+                        </div>
+                        <div class="vm-card-footer">
+                            <button class="btn-secondary">Подробнее</button>
+                            <button class="btn-secondary">Продлить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
